@@ -1,0 +1,46 @@
+{
+  "schema": "project-manifest.0 (draft — kit v2 will formalize)",
+  "status": "PROVISIONAL 2026-07-24 (survey conducted interactively; awaiting ratification — see ROADMAP)",
+  "survey": {
+    "what_is_it": "engine + app — a pure deterministic morph engine (QM-0, JS reference implementation) plus a Max for Live MIDI-effect device (QM-1) as its first host; QM-2 is a contract for future native-instrument integrations",
+    "architecture_rung": {
+      "choice": 1,
+      "menu": [
+        "1: single thread",
+        "2: thread + subagents/verifier",
+        "3: organ fleet"
+      ],
+      "earned_by": "two-artifact project (engine + one device), no parallel writers, no seams yet. The QM-2 era (multiple instrument integrations in flight) is the earliest plausible rung escalation and is a deliberate future decision, not a default."
+    },
+    "domain_core_llm_must_not_own": "the QM-0 engine: selection law (Gumbel-max), noise tables, temperature/coupling, commit policies, epoch semantics. Pure function (position, engine state, noise table) → assignment; no free-running randomness; all randomness seeded and frozen. AI may propose parameter mappings and UX; deterministic code decides assignments.",
+    "oracle_shape": {
+      "goldens": "strict pinned golden assignment vectors for the QM-0 engine (frozen seed → exact-match outputs), CI-blocking; the Max device layer gets structure/lint smoke checks only — patchers cannot run headless in CI",
+      "ci": "single-version smoke (node LTS); verify fast only — no Max runtime in CI"
+    },
+    "second_implementation": {
+      "planned": true,
+      "detail": "QM-2 contracts a native-instrument port (candidates: HYPERSAW, PLACE, TERRANE, ORRERY). The JS engine is the pinned reference implementation; any port is golden-tested against it (port-pin)."
+    },
+    "consumers_and_providers": {
+      "consumes": [],
+      "consumed_by": [
+        "none in v1 — standalone. QM-2 makes sibling instruments consumers later; intake briefs deferred until that phase."
+      ]
+    },
+    "parallel_audit_thread": false,
+    "knowledge_loop_tags": [
+      "m4l-lom",
+      "max-js",
+      "morph-engine",
+      "device-ux"
+    ],
+    "lifespan_autonomy": {
+      "lifespan": "long-lived (a real instrument in continued use)",
+      "autonomy_tier": "interactive-only — agent work happens in attended sessions; no unattended loops. Standard governance."
+    }
+  },
+  "sync": {
+    "remote": "github.com/Lifted-Truck/quantum-morph",
+    "visibility": "public — leak gate is CI-blocking and runs before every push"
+  }
+}

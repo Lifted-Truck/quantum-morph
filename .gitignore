@@ -1,0 +1,13 @@
+# harness runtime state
+.harness/
+.claude/settings.local.json
+
+# raw seed archive — contents live in docs/specs/ (DECISIONS D-004)
+files.zip
+
+# macOS
+.DS_Store
+
+# Max auto-backups
+*.maxpat.bak*
+*.amxd.bak*

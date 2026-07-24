@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# verify — oracle dispatcher. The harness's only interface to project QC.
+# Usage: ./verify fast | full | report
+# Contract: exit 0 = green, nonzero = red. Writes .harness/last-verify.json.
+set -uo pipefail
+
+TARGET="${1:-fast}"
+HARNESS_DIR=".harness"
+mkdir -p "$HARNESS_DIR"
+
+record() { # record <target> <exit_code>
+  local git_hash; git_hash=$(git rev-parse --short HEAD 2>/dev/null || echo "no-git")
+  printf '{"target":"%s","exit":%d,"git":"%s","ts":"%s"}\n' \
+    "$1" "$2" "$git_hash" "$(date -u +%FT%TZ)" > "$HARNESS_DIR/last-verify.json"
+  rm -f "$HARNESS_DIR/dirty"
+  return "$2"
+}
+
+# --- leak gate (kit-core — DO NOT delete; keep self-contained) --------------
+# No machine-absolute home paths in tracked files: they bake the local username
+# and directory layout into the repo — and into any public remote. Use a
+# ~/-relative path or an env var instead. Prose placeholders (/Users/<user>/,
+# /home/$USER/) are docs ABOUT the pattern, not leaks, and are allowed.
+# NB: git grep uses POSIX ERE — no \s, no \d. (A \s here silently matches
+# NOTHING; that is how the fleet scanner once shipped blind. Keep it ERE-safe.)
+# --untracked is load-bearing: git grep defaults to TRACKED files only, so a
+# brand-new file is invisible to the gate until it is staged. Running verify
+# before `git add` then passes, and CI fails after the commit lands — which is
+# exactly how the first version of this gate shipped its own leak. Untracked
+# but not-gitignored == about to be committed, so scan it.
+# Allowlist: security docs legitimately CONTAIN the patterns (they are docs
+# ABOUT leaks). `.leakcheck-allow` lists exempt paths/globs, one per line
+# (# comments ok). Exemptions are commits too — justify sensitive ones in
+# DECISIONS.md. The scanner and the allowlist file are always exempt.
+leak_gate() {
+  local hits excludes=(':(exclude)*leak_scan.py' ':(exclude).leakcheck-allow')
+  if [ -f .leakcheck-allow ]; then
+    local line
+    while IFS= read -r line; do
+      line="${line%%#*}"; line="${line#"${line%%[![:space:]]*}"}"  # strip comment + lead ws
+      line="${line%"${line##*[![:space:]]}"}"                       # strip trailing ws
+      [ -n "$line" ] && excludes+=(":(exclude)$line")
+    done < .leakcheck-allow
+  fi
+  hits=$(git grep --untracked -nIE '/(Users|home)/[^/]+/' -- . "${excludes[@]}" 2>/dev/null \
+         | grep -vE '/(Users|home)/[<$@{%]' || true)
+  [ -z "$hits" ] && return 0
+  echo "verify: LEAK — machine-absolute path in a tracked file (use ~/ instead):" >&2
+  echo "$hits" | sed 's/^/    /' >&2
+  return 1
+}
+
+fast() {
+  # ---- Layer-0: seconds, not minutes. CI-blocking. -------------------------
+  local ok=0
+  leak_gate || ok=1          # privacy gate: kit-core, keep it first
+
+  # Structure sanity: the files the charter/ROADMAP point at must exist.
+  local f
+  for f in CLAUDE.md ROADMAP.md README.md DECISIONS.md INDEX.md LIBRARY.md \
+           project.manifest.json docs/specs/QM-0-core-engine-spec.md \
+           docs/specs/QM-1-m4l-device-spec.md \
+           docs/specs/QM-2-instrument-integration-spec.md; do
+    [ -f "$f" ] || { echo "verify: MISSING $f" >&2; ok=1; }
+  done
+
+  # Manifest must parse (node is the project toolchain — engine is JS).
+  node -e 'JSON.parse(require("fs").readFileSync("project.manifest.json","utf8"))' \
+    || { echo "verify: project.manifest.json is not valid JSON" >&2; ok=1; }
+
+  # Knowledge-loop atomicity: every INDEX pointer resolves in LIBRARY.
+  local id
+  for id in $(grep -oE 'L[0-9]{4}' INDEX.md 2>/dev/null | sort -u); do
+    grep -q "\[$id\]" LIBRARY.md || { echo "verify: INDEX $id has no LIBRARY entry" >&2; ok=1; }
+  done
+
+  # Engine suite (arrives with ROADMAP Q-002; a no-op until tests exist).
+  if ls tests/*.test.mjs >/dev/null 2>&1; then
+    node --test tests/ || ok=1
+  fi
+
+  return "$ok"
+}
+
+full() {
+  fast || return $?
+  # ---- Layer-E: the whole gate. Run before closing a queue item. -----------
+  # P0/P1: full == fast (ROADMAP §Oracle). Device-layer attended checks
+  # (loads in Live 12, docs/device-checklist.md) are added at P2.
+  return 0
+}
+
+case "$TARGET" in
+  fast)   fast;  record fast  $? ;;
+  full)   full;  record full  $? ;;
+  report) cat "$HARNESS_DIR/last-verify.json" 2>/dev/null || { echo '{"target":null,"exit":null}'; exit 1; } ;;
+  *)      echo "usage: ./verify fast|full|report" >&2; exit 64 ;;
+esac
