@@ -5,7 +5,8 @@ State lives here; conversations are ephemeral.
 
 ## Status
 
-- **Phase:** P0 — scaffolded; specs landed; engine unbuilt.
+- **Phase:** P0 — scaffolded; specs landed; prior-art swept; engine unbuilt.
+  P0 gate is one item short: human ratification.
 - **Oracle:** `fast` = leak gate + structure/manifest sanity (green, honestly
   scoped — no engine tests exist yet; they arrive with Q-002/Q-003 and become
   part of `fast` when they do). `full` = `fast` only for now; device-layer
@@ -25,10 +26,8 @@ Prior-art bookends per kit Decision 30: Phase 0 opens with a prior-art
 landscape; any public release is gated on a prior-art & IP re-scan.
 
 - **P0 — Ratify + prior-art landscape.** Human ratifies manifest + this file.
-  Prior-art sweep (vector synths, Gumbel-max in audio tools, existing morph
-  devices — NestUp, Sting, LFO tools, ableton-live-preset morphers) lands in
-  `docs/prior-art.md`, dated and cited. Gate: ratification recorded here;
-  prior-art doc exists.
+  Prior-art sweep lands in `docs/prior-art.md`, dated and cited. Gate:
+  ratification recorded here; prior-art doc exists (✅ 2026-07-24).
 - **P1 — QM-0 engine (JS reference).** Pure engine in `engine/`, unit tests +
   pinned golden assignment vectors in `tests/`. Gate: `./verify fast` runs the
   engine suite green; goldens frozen and protected.
@@ -45,14 +44,20 @@ landscape; any public release is gated on a prior-art & IP re-scan.
 ## Queue
 
 ### Q-001 — Prior-art landscape (P0)
-- **Status:** open
+- **Status:** done (trace: `traces/2026-07-24-prior-art.md`)
 - **Scope:** `docs/prior-art.md` (new)
 - **Acceptance criteria:**
-  1. Dated, cited survey of preset-morph prior art (hardware vector synths →
+  1. ✅ Dated, cited survey of preset-morph prior art (hardware vector synths →
      current M4L morph devices) and any patent-shaped risks for the
      stochastic-assignment approach.
-  2. One paragraph: what quantum-morph does that the surveyed art does not.
+  2. ✅ One paragraph: what quantum-morph does that the surveyed art does not.
 - **Out of scope:** design changes; this informs, it does not redesign.
+- **Findings carried forward:** no spec revision indicated. Two items land on
+  P3, not P1 — (a) US10770048B2 (active to ~2038) reaches discrete-element
+  morphing but claims *proportional crossfade*, which QM-0 refuses by
+  construction; needs counsel, not redesign. (b) "QUANTUM MORPH" as a shipping
+  name overlaps Waldorf Quantum's goods class — working title only until a
+  trademark check.
 
 ### Q-002 — QM-0 engine core (P1)
 - **Status:** blocked (on P0 ratification)
@@ -85,6 +90,8 @@ landscape; any public release is gated on a prior-art & IP re-scan.
 
 ## Decision log
 
+- 2026-07-24 — Q-001 prior-art sweep closed; no spec revision indicated; two
+  IP items deferred to P3 (trace: `traces/2026-07-24-prior-art.md`).
 - 2026-07-24 — Spin-up decisions ratified-provisional; see DECISIONS.md D-001…D-005.
 
 ## Graduation criteria

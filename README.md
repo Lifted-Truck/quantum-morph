@@ -12,8 +12,10 @@ sounds the same. A playable instrument, not a random patch generator.
 
 ## Status
 
-🚧 **P0 — scaffolded, unbuilt.** Specs are normative and complete; no engine
-or device code exists yet. See [ROADMAP.md](ROADMAP.md) for phases and gates.
+🚧 **P0 — scaffolded, unbuilt.** Specs are normative and complete and the
+prior-art sweep is done; no engine or device code exists yet. P0 closes on
+human ratification of the manifest. See [ROADMAP.md](ROADMAP.md) for phases
+and gates.
 
 ## Map
 
@@ -22,6 +24,7 @@ or device code exists yet. See [ROADMAP.md](ROADMAP.md) for phases and gates.
 | `docs/specs/QM-0-core-engine-spec.md` | **Normative** engine spec — wins over everything below |
 | `docs/specs/QM-1-m4l-device-spec.md` | The Max for Live MIDI-effect device |
 | `docs/specs/QM-2-instrument-integration-spec.md` | Contract for future native-instrument ports |
+| `docs/prior-art.md` | Prior-art landscape + IP flags (swept 2026-07-24) |
 | `engine/` | QM-0 reference implementation (dependency-free ES-module JS; runs under Node and Max `v8`) — *empty until P1* |
 | `device/` | M4L patcher + device glue — *empty until P2* |
 | `prototype/quantum-morph-lab.html` | Standalone browser prototype. Reference-only; its coupling approach is superseded by QM-0 §5 |
