@@ -74,9 +74,11 @@ fast() {
     grep -q "\[$id\]" LIBRARY.md || { echo "verify: INDEX $id has no LIBRARY entry" >&2; ok=1; }
   done
 
-  # Engine suite (arrives with ROADMAP Q-002; a no-op until tests exist).
+  # Engine suite. The glob is load-bearing: `node --test tests/` resolves the
+  # DIRECTORY as a module path on Node 24 and dies with MODULE_NOT_FOUND before
+  # running anything. Pass the files.
   if ls tests/*.test.mjs >/dev/null 2>&1; then
-    node --test tests/ || ok=1
+    node --test tests/*.test.mjs || ok=1
   fi
 
   return "$ok"

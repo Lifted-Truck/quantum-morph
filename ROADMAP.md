@@ -5,14 +5,12 @@ State lives here; conversations are ephemeral.
 
 ## Status
 
-- **Phase:** P0 — scaffolded; specs landed; prior-art swept; engine unbuilt.
-  P0 gate is one item short: human ratification.
-- **Oracle:** `fast` = leak gate + structure/manifest sanity (green, honestly
-  scoped — no engine tests exist yet; they arrive with Q-002/Q-003 and become
-  part of `fast` when they do). `full` = `fast` only for now; device-layer
-  attended checks are defined at P2.
-- **Last human ratification:** pending — manifest is PROVISIONAL until the
-  human ratifies it and this file at the P0 gate.
+- **Phase:** P1 — P0 closed; QM-0 engine core built (Q-002 done). Q-003
+  (commit policies) is the remaining P1 item.
+- **Oracle:** `fast` = leak gate + structure/manifest sanity + knowledge-loop
+  atomicity + 41 engine tests + pinned golden vectors. Green. `full` = `fast`
+  only for now; device-layer attended checks are defined at P2.
+- **Last human ratification:** 2026-07-24 — manifest RATIFIED, P0 gate closed.
 
 ## Invariants under active protection
 
@@ -60,21 +58,37 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   trademark check.
 
 ### Q-002 — QM-0 engine core (P1)
-- **Status:** blocked (on P0 ratification)
+- **Status:** done (trace: `traces/2026-07-24-qm0-engine.md`)
 - **Scope:** `engine/`, `tests/`
 - **Acceptance criteria:**
-  1. Implements QM-0 §2–§5: bilinear/degenerate weights, Gumbel-max selection,
+  1. ✅ Implements QM-0 §2–§5: bilinear/degenerate weights, Gumbel-max selection,
      temperature, salience, coupling via the mask formulation (NOT blending),
      epoch/reshuffle semantics.
-  2. Pure ES modules; runs under Node and Max `v8`; zero dependencies.
-  3. Unit tests + property checks (Σw=1; zero-weight corner never wins;
-     determinism: same seed+position ⇒ same assignment).
-  4. Golden vectors: frozen seed → pinned assignments across a position grid,
-     exact-match, wired into `./verify fast`.
+  2. ⚠️ Pure ES modules, zero dependencies, no Node-only APIs in `engine/` —
+     **Node side verified** (41 tests). **Max `v8` side UNVERIFIED**: no Max
+     runtime available in an agent session. See open questions.
+  3. ✅ Unit tests + property checks (Σw=1; zero-weight corner never wins;
+     determinism: same seed+position ⇒ same assignment). QM-0 §10 acceptance
+     tests 1–6 are implemented; 7 (no clicks) and 8 (recall in-host) are
+     device-layer and belong to P2.
+  4. ✅ Golden vectors: seed 40219 → pinned assignments over a 9×9 position grid
+     × 6 (T,c) settings × 2 epochs, exact-match, wired into `./verify fast`.
 - **Out of scope:** any Max/LOM code; UI.
+- **Open questions (carry into P2, none blocking Q-003):**
+  1. **3-corner triangle is an engine convention, not a spec quotation.** QM-0
+     §2 says "a triangle inscribed in the field" without fixing which.
+     `engine/weights.mjs` pins an isoceles triangle (base y=0, apex at
+     (0.5,1)). Changing it invalidates every 3-corner golden. Needs a human
+     ratification or a spec amendment before any 3-corner device ships.
+  2. **`js` vs `v8`.** QM-1 §212 says "the device's `js`/`v8` object". The
+     engine is ES modules, which the legacy `js` object cannot load — this
+     commits the device to `v8` (Max 8.5+). Confirm at P2 against a real Max.
+  3. Coupling default is set to 0.4 (`RANGES.coupling`) from QM-0 §5.1's
+     "expected useful range [0.25, 0.55]". §5.1 says to verify against the
+     prototype before fixing defaults; not yet done.
 
 ### Q-003 — Commit policies + noise-table lifecycle (P1)
-- **Status:** blocked (on Q-002)
+- **Status:** open (unblocked — Q-002 done)
 - **Scope:** `engine/`, `tests/`
 - **Acceptance criteria:**
   1. Commit modes per QM-0 §8 (incl. NOTE_ON commit semantics as a pure
@@ -90,6 +104,10 @@ landscape; any public release is gated on a prior-art & IP re-scan.
 
 ## Decision log
 
+- 2026-07-24 — Q-002 engine core landed; `./verify` test invocation fixed with
+  human approval (strengthening, not weakening: the gate previously errored
+  instead of running the suite) (trace: `traces/2026-07-24-qm0-engine.md`).
+- 2026-07-24 — **P0 gate closed: manifest RATIFIED by the human.**
 - 2026-07-24 — Q-001 prior-art sweep closed; no spec revision indicated; two
   IP items deferred to P3 (trace: `traces/2026-07-24-prior-art.md`).
 - 2026-07-24 — Spin-up decisions ratified-provisional; see DECISIONS.md D-001…D-005.

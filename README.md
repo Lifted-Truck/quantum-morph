@@ -12,10 +12,11 @@ sounds the same. A playable instrument, not a random patch generator.
 
 ## Status
 
-🚧 **P0 — scaffolded, unbuilt.** Specs are normative and complete and the
-prior-art sweep is done; no engine or device code exists yet. P0 closes on
-human ratification of the manifest. See [ROADMAP.md](ROADMAP.md) for phases
-and gates.
+🔧 **P1 — engine built, device unbuilt.** The QM-0 reference engine is
+complete and green (41 tests + pinned goldens, `./verify fast`). QM-0 §10
+acceptance tests 1–6 pass; 7–8 are device-layer. No Max device exists yet, and
+the engine has **not** been run inside Max — only under Node. See
+[ROADMAP.md](ROADMAP.md) for phases, gates, and open questions.
 
 ## Map
 
@@ -25,7 +26,7 @@ and gates.
 | `docs/specs/QM-1-m4l-device-spec.md` | The Max for Live MIDI-effect device |
 | `docs/specs/QM-2-instrument-integration-spec.md` | Contract for future native-instrument ports |
 | `docs/prior-art.md` | Prior-art landscape + IP flags (swept 2026-07-24) |
-| `engine/` | QM-0 reference implementation (dependency-free ES-module JS; runs under Node and Max `v8`) — *empty until P1* |
+| `engine/` | QM-0 reference implementation — dependency-free ES modules: `rng` · `weights` · `noise` · `select` · `warp` |
 | `device/` | M4L patcher + device glue — *empty until P2* |
 | `prototype/quantum-morph-lab.html` | Standalone browser prototype. Reference-only; its coupling approach is superseded by QM-0 §5 |
 | `tests/` | Unit tests + pinned golden assignment vectors (protected) |
@@ -46,4 +47,4 @@ Humans: `./verify fast` must be green before any commit lands; specs and
 goldens are behind a human gate.
 
 ---
-*Last verified: 2026-07-24 (scaffold; statuses above checked against the tree).*
+*Last verified: 2026-07-24 (P1 engine landed; statuses above checked against the tree and a green ./verify fast).*
