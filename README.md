@@ -10,6 +10,24 @@ coherently instead of snapping at 50%. The engine is a pure function of
 (position, state, frozen noise table): the same spot on the field always
 sounds the same. A playable instrument, not a random patch generator.
 
+![Quantum Morph Lab, a dark interface in three regions. Top left: a square morph
+field, its quadrants tinted by four corner patches — A·GLASS amber, B·GRIT red,
+C·HOLLOW blue, D·BLOOM green — with a puck at centre and a stacked bar beneath
+showing the live corner census, 27% / 27% / 5% / 41%. Top right: a FLIP ENGINE
+panel — temperature 1.00, module coupling 30%, flip glide 8 ms, Quantum/Morph
+and Immediate/Next-note toggles, reshuffle on seed 1024, and player controls.
+Bottom: six parameter modules (OSC A, OSC B, FILTER, ENV, LFO, FX), each row a
+parameter and its value — osc A wave sawtooth, filter cutoff 6.5k, delay mix 50%
+— with a coloured bar at the left of every row marking which corner currently
+owns that parameter.](docs/images/quantum-morph-lab.png)
+
+<sub>The `quantum-morph-lab` browser prototype. The coloured bar on each
+parameter row is the whole idea in one glance: every parameter is owned outright
+by one corner, never averaged between them — and the census bar shows those
+owners landing in proportion to where the puck sits on the field. Reference-only,
+and superseded on coupling by QM-0 §5 (see the map below); the shipping Max for
+Live device does not exist yet.</sub>
+
 ## Status
 
 🔧 **P1 — engine built, device unbuilt.** The QM-0 reference engine is
