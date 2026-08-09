@@ -30,10 +30,11 @@ Live device does not exist yet.</sub>
 
 ## Status
 
-🔧 **P1 — engine built, device unbuilt.** The QM-0 reference engine is
-complete and green (41 tests + pinned goldens, `./verify fast`). QM-0 §10
-acceptance tests 1–6 pass; 7–8 are device-layer. No Max device exists yet, and
-the engine has **not** been run inside Max — only under Node. See
+🔧 **P1 complete — engine done, device unbuilt.** The QM-0 reference engine is
+complete and green: 59 tests plus two pinned golden files (selection grid,
+reshuffle lifecycle), all under `./verify fast`. QM-0 §10 acceptance tests 1–6
+pass; 7–8 are device-layer. No Max device exists yet, and the engine has **not**
+been run inside Max — only under Node. See
 [ROADMAP.md](ROADMAP.md) for phases, gates, and open questions.
 
 ## Map
@@ -44,7 +45,7 @@ the engine has **not** been run inside Max — only under Node. See
 | `docs/specs/QM-1-m4l-device-spec.md` | The Max for Live MIDI-effect device |
 | `docs/specs/QM-2-instrument-integration-spec.md` | Contract for future native-instrument ports |
 | `docs/prior-art.md` | Prior-art landscape + IP flags (swept 2026-07-24) |
-| `engine/` | QM-0 reference implementation — dependency-free ES modules: `rng` · `weights` · `noise` · `select` · `warp` |
+| `engine/` | QM-0 reference implementation — dependency-free ES modules: `rng` · `weights` · `noise` · `select` · `warp` · `commit` |
 | `device/` | M4L patcher + device glue — *empty until P2* |
 | `prototype/quantum-morph-lab.html` | Standalone browser prototype. Reference-only; its coupling approach is superseded by QM-0 §5 |
 | `tests/` | Unit tests + pinned golden assignment vectors (protected) |
@@ -65,4 +66,4 @@ Humans: `./verify fast` must be green before any commit lands; specs and
 goldens are behind a human gate.
 
 ---
-*Last verified: 2026-07-24 (P1 engine landed; statuses above checked against the tree and a green ./verify fast).*
+*Last verified: 2026-08-08 (P1 closed; statuses above checked against the tree and a green ./verify fast).*

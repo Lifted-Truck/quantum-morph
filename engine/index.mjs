@@ -24,6 +24,18 @@ export {
   census,
 } from './select.mjs';
 export { WARP, resolveGradual, validateGradual } from './warp.mjs';
+export {
+  COMMIT_POLICY,
+  COMMIT_EVENT,
+  eventSatisfies,
+  createCommitState,
+  propose,
+  notify,
+  setPolicy,
+  discardPending,
+  pendingFlips,
+  pendingCount,
+} from './commit.mjs';
 
 /** QM-1 §2: the v1 slot ceiling is a named constant, not a structural assumption. */
 export const MAX_SLOTS = 64;

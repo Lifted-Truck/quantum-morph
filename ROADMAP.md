@@ -5,11 +5,13 @@ State lives here; conversations are ephemeral.
 
 ## Status
 
-- **Phase:** P1 — P0 closed; QM-0 engine core built (Q-002 done). Q-003
-  (commit policies) is the remaining P1 item.
+- **Phase:** **P1 complete** — Q-002 and Q-003 both done; the QM-0 engine is
+  built, green, and golden-pinned. P2 (the M4L device) is not started; its
+  first task is writing Q-004's acceptance criteria.
 - **Oracle:** `fast` = leak gate + structure/manifest sanity + knowledge-loop
-  atomicity + 41 engine tests + pinned golden vectors. Green. `full` = `fast`
-  only for now; device-layer attended checks are defined at P2.
+  atomicity + 59 engine tests + two pinned golden files (selection, reshuffle
+  lifecycle). Green. `full` = `fast` only for now; device-layer attended checks
+  are defined at P2.
 - **Last human ratification:** 2026-07-24 — manifest RATIFIED, P0 gate closed.
 
 ## Invariants under active protection
@@ -88,13 +90,24 @@ landscape; any public release is gated on a prior-art & IP re-scan.
      prototype before fixing defaults; not yet done.
 
 ### Q-003 — Commit policies + noise-table lifecycle (P1)
-- **Status:** open (unblocked — Q-002 done)
+- **Status:** done (trace: `traces/2026-08-08-commit-policies.md`)
 - **Scope:** `engine/`, `tests/`
 - **Acceptance criteria:**
-  1. Commit modes per QM-0 §8 (incl. NOTE_ON commit semantics as a pure
+  1. ✅ Commit modes per QM-0 **§6** (incl. NOTE_ON commit semantics as a pure
      "commit-eligible" predicate — no timing code in the engine).
-  2. Reshuffle/epoch events covered by goldens.
-- **Out of scope:** the ms-level note-delay mechanics (device-layer, Q-004).
+     *(Corrected 2026-08-08: this read "§8" at scaffold time. §8 is recall and
+     state; commit and timing are §6. The criterion was always about §6.)*
+     `engine/commit.mjs`: policy × event predicate, held pending set with a
+     count for the UI readout, wholesale (§6.3-atomic) flush, IMMEDIATE-flushes
+     -on-switch. No clock, no transport, no timer anywhere in the engine.
+  2. ✅ Reshuffle/epoch events covered by goldens —
+     `tests/goldens/qm0-reshuffle.json`, a 7-step scripted lifetime (both
+     reshuffle kinds, both depth extremes, a reseed mid-chain) pinning tables,
+     epochs, rng state, and probe assignments. Added as a NEW golden file; the
+     existing `qm0-selection.json` was not touched.
+- **Out of scope:** the ms-level note-delay mechanics (device-layer, Q-004);
+  glide ramping (§6.2 is device timing — the engine reports *which* slots
+  changed, the device decides how they move).
 
 ### Q-004 — QM-1 device shell (P2)
 - **Status:** blocked (on P1 gate)
@@ -104,6 +117,9 @@ landscape; any public release is gated on a prior-art & IP re-scan.
 
 ## Decision log
 
+- 2026-08-08 — Q-003 done; **P1 gate closed** (engine suite green, goldens
+  frozen and protected). Two design calls recorded in DECISIONS D-007
+  (trace: `traces/2026-08-08-commit-policies.md`).
 - 2026-07-24 — Q-002 engine core landed; `./verify` test invocation fixed with
   human approval (strengthening, not weakening: the gate previously errored
   instead of running the suite) (trace: `traces/2026-07-24-qm0-engine.md`).

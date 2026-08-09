@@ -3,6 +3,17 @@
 One entry per ratified decision, newest first. Never edit past entries;
 supersede them with a new one.
 
+- **D-007 · 2026-08-08 — Two commit-policy calls QM-0 §6 does not make.**
+  (a) **A BAR event also satisfies BEAT policy.** §6.1 lists the policies but
+  not how a host that emits only the strongest boundary it crossed should
+  behave. Treating a bar as a beat is musically true and fails safe; the
+  converse (a beat flushing a BAR queue) is rejected. (b) **`discardPending()`
+  exists**, though §6 does not mention it. Without it a queue built at one
+  field position can only be resolved by committing it — a user who drags
+  somewhere by accident under NOTE_ON would have to play the mistake to clear
+  it. Both are additive to the spec, not contradictions; if either is wrong,
+  QM-0 §6 is the place to fix it.
+
 - **D-006 · 2026-08-05 — Library standby (plugin-skeleton).** A shared
   infrastructure library is being founded; its FOUNDATIONS document will define
   contracts this project eventually consumes (parameter registry, mod routing,
