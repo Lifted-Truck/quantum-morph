@@ -143,7 +143,7 @@ landscape; any public release is gated on a prior-art & IP re-scan.
     assignments, never variates. Recorded in LIBRARY L0004.
 
 ### Q-007 — Leak gate vs. concurrent foreign probes
-- **Status:** in-progress (branch `q-007-verify-concurrency`)
+- **Status:** done (trace: `traces/2026-08-18-leak-gate-concurrency.md`)
 - **Scope:** `verify` (leak_gate only)
 - **Why:** `./verify fast` went red at 04:10:49Z on a commit that CI had passed
   60/60 fifty seconds earlier, then green again at 04:11:38Z — same tree, no
@@ -163,6 +163,10 @@ landscape; any public release is gated on a prior-art & IP re-scan.
 - **Out of scope:** making `fast()` report WHICH gate failed. Still worth doing
   (a single aggregate exit code is why this took an investigation rather than a
   glance) but it is a separate `./verify` change needing its own approval.
+- **Superseded in place by kit 2.4.0 (same day):** `leak_gate` and `record` are
+  no longer project-owned — they are vendored to `.kit/kit-gates.sh`, pinned by
+  sha256. The fix above was NOT lost in the transfer; re-verified against the
+  vendored gate (foreign plant → exit 0, owned plant → exit 1).
 
 ### Q-004 — QM-1 device shell (P2)
 - **Status:** blocked (on P1 gate)
@@ -193,6 +197,10 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   a slot — an N-module pool needs ~N²/2 cells and that ceiling arrives fast.
 
 ## Decision log
+
+- 2026-08-18 — Kit 2.4.0: gate MECHANISM vendored to `.kit/`. This repo's copied
+  leak gate was missing the Windows identity pattern while declaring
+  `kit_version: 2.1.0` — a real gap, closed (DECISIONS D-012).
 
 - 2026-08-18 — Q-006 CLOSED: CI green on ubuntu-x64; `u`/`rngState` bit-exactness
   measured rather than assumed. Q-007 opened for the leak-gate concurrency fix

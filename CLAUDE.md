@@ -97,7 +97,9 @@ engine code. Max patcher + device glue in `device/`. Tests in `tests/` run via
 
 **Protected paths.** `docs/specs/` (normative — human gate on any edit),
 `tests/goldens/` (regenerating goldens is a gate-weakening event: human
-decision in ROADMAP first).
+decision in ROADMAP first), `.kit/` (**KIT-OWNED** — vendored gate mechanism
+pinned by sha256 in `.kit/MANIFEST`; never hand-edit, `./verify` goes red by
+design if you do. Update it with `kit_sync.py`, never by hand).
 
 **Verify targets.** `fast`: leak gate + structure/manifest sanity + engine unit
 tests + golden vectors (seconds; CI runs this on node LTS). `full`: fast + the
