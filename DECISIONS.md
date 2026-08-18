@@ -12,6 +12,18 @@ supersede them with a new one.
   to make it absolute. CI already ran on `pull_request`, so no workflow change
   was needed.
 
+- **D-011 · 2026-08-18 — Leak gate ignores foreign currency-probe plants.**
+  Gate change to `./verify` (human-authored). `kit/currency.py` proves the leak
+  gate fires by planting identity paths in `.kit-currency-plant-*` files in the
+  working tree and running `./verify`; because the gate deliberately scans
+  UNTRACKED files, a concurrent run of our own read someone else's plant and
+  went red on a file that had vanished by the time it was investigated. Runs now
+  exclude plants they do not own; the owning probe names its file in
+  `KIT_LEAK_PLANT` and still sees it, so currency.py's proof still works.
+  **Verified not to be a weakening, empirically rather than by argument:** an
+  ordinary untracked file containing an identity path still reddens the gate
+  (exit 1), and only the fixed dot-prefixed probe pattern is excluded.
+
 - **D-010 · 2026-08-18 — Golden gate split, not loosened (Q-006).** Human
   decision, required because relaxing a golden comparison is a gate change.
   `Math.log` is not bit-identical across platforms, so raw-float noise tables

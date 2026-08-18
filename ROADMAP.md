@@ -110,7 +110,7 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   changed, the device decides how they move).
 
 ### Q-006 — Golden portability: float-exactness is not the gate (P1 debt)
-- **Status:** in-progress (branch `q-006-golden-portability`)
+- **Status:** done (trace: `traces/2026-08-18-golden-portability.md`; merged as `d6e7c5d` via PR #1)
 - **Scope:** `tests/goldens.test.mjs`, `tests/reshuffle-goldens.test.mjs`,
   `tests/helpers.mjs`. **No engine change** — the engine was never wrong.
 - **Why:** CI was red from 2026-08-05 to 2026-08-18 while `./verify fast` was
@@ -127,8 +127,12 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   2. ✅ All assignment goldens remain exact-match, unchanged.
   3. ✅ A self-test proves the tolerance still fires on an O(1e−7) change —
      a loosened gate nobody watched fire is decoration.
-  4. ⏳ CI green on ubuntu-x64. **This is the criterion that matters and it can
-     only be met on the runner** — local green is what hid the problem.
+  4. ✅ CI green on ubuntu-x64 — run at 04:09:59Z on `56dd6a6`: 60 tests, 60
+     pass. **This is the criterion that mattered and only the runner could meet
+     it.** It also settled the open hypothesis: the test asserting `u` and
+     `rngState` bit-exact PASSED on a different architecture from the one that
+     generated the goldens, so "u is exact, only g/G touch libm" is now
+     measured, not inferred from reading `rng.mjs`.
 - **Findings carried forward (not fixed here):**
   - QM-0 §8.2 offers "enter a seed to regenerate a table from scratch". That
     regeneration is now known to be platform-dependent at the last ULP.
@@ -137,6 +141,28 @@ landscape; any public release is gated on a prior-art & IP re-scan.
     way the spec implies. Spec amendment candidate — human call, not urgent.
   - Max's `v8` is a third V8 build. Any future device-side golden must compare
     assignments, never variates. Recorded in LIBRARY L0004.
+
+### Q-007 — Leak gate vs. concurrent foreign probes
+- **Status:** in-progress (branch `q-007-verify-concurrency`)
+- **Scope:** `verify` (leak_gate only)
+- **Why:** `./verify fast` went red at 04:10:49Z on a commit that CI had passed
+  60/60 fifty seconds earlier, then green again at 04:11:38Z — same tree, no
+  checkout, no stash, nothing untracked afterwards. Cause: `kit/currency.py`
+  proves the gate FIRES by planting identity paths in `.kit-currency-plant-*`
+  files inside this working tree and running `./verify`. Our concurrent run
+  scanned the other run's plant (the gate deliberately scans untracked files)
+  and went red on a file that no longer existed by the time anyone looked.
+- **Acceptance criteria:**
+  1. ✅ A foreign probe's plant is invisible to runs that do not own it.
+  2. ✅ The owning probe still sees its own plant, so currency.py's proof still
+     works (`KIT_LEAK_PLANT` names it).
+  3. ✅ **Not a weakening** — an ordinary untracked file containing an identity
+     path still reddens the gate. Verified empirically, not argued:
+     plant-present → exit 0; owned plant → exit 1; ordinary bad file → exit 1;
+     clean → exit 0.
+- **Out of scope:** making `fast()` report WHICH gate failed. Still worth doing
+  (a single aggregate exit code is why this took an investigation rather than a
+  glance) but it is a separate `./verify` change needing its own approval.
 
 ### Q-004 — QM-1 device shell (P2)
 - **Status:** blocked (on P1 gate)
@@ -167,6 +193,10 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   a slot — an N-module pool needs ~N²/2 cells and that ceiling arrives fast.
 
 ## Decision log
+
+- 2026-08-18 — Q-006 CLOSED: CI green on ubuntu-x64; `u`/`rngState` bit-exactness
+  measured rather than assumed. Q-007 opened for the leak-gate concurrency fix
+  (trace: `traces/2026-08-18-leak-gate-concurrency.md`).
 
 - 2026-08-18 — Q-006 opened: golden float-exactness relaxed to a split gate on
   human decision; CI had been red 13 days against a correct engine

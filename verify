@@ -33,7 +33,26 @@ record() { # record <target> <exit_code>
 # (# comments ok). Exemptions are commits too — justify sensitive ones in
 # DECISIONS.md. The scanner and the allowlist file are always exempt.
 leak_gate() {
+  # A foreign process may be probing this repo right now. `kit/currency.py`
+  # proves the gate FIRES by planting identity paths in `.kit-currency-plant-*`
+  # inside this working tree and running this very script — so a concurrent
+  # `./verify fast` of our own reads the other run's plant and goes red on a
+  # file that no longer exists by the time anyone looks (mind-lathe, 2026-08-18;
+  # a retrofit ends by forcing a verify, which is exactly when the probe runs).
+  # Plants are therefore invisible EXCEPT to the probe that owns the run, which
+  # names its file in KIT_LEAK_PLANT. Not a weakening: the excluded name is a
+  # fixed dot-prefixed pattern no project file uses, and the owning probe still
+  # sees it.
   local hits excludes=(':(exclude)*leak_scan.py' ':(exclude).leakcheck-allow')
+  if [ -n "${KIT_LEAK_PLANT:-}" ]; then
+    # Owned run: every OTHER session's plant is still excluded, ours is not.
+    local other
+    for other in .kit-currency-plant-*; do
+      [ "$other" = "$KIT_LEAK_PLANT" ] || [ ! -e "$other" ] || excludes+=(":(exclude)$other")
+    done
+  else
+    excludes+=(':(exclude).kit-currency-plant-*')
+  fi
   if [ -f .leakcheck-allow ]; then
     local line
     while IFS= read -r line; do
