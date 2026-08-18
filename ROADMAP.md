@@ -109,6 +109,35 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   glide ramping (§6.2 is device timing — the engine reports *which* slots
   changed, the device decides how they move).
 
+### Q-006 — Golden portability: float-exactness is not the gate (P1 debt)
+- **Status:** in-progress (branch `q-006-golden-portability`)
+- **Scope:** `tests/goldens.test.mjs`, `tests/reshuffle-goldens.test.mjs`,
+  `tests/helpers.mjs`. **No engine change** — the engine was never wrong.
+- **Why:** CI was red from 2026-08-05 to 2026-08-18 while `./verify fast` was
+  green locally. Goldens generated on darwin-arm64 compared float-exact against
+  ubuntu-x64: `g = −log(−log(u))` goes through `Math.log`, which is not
+  bit-identical across platforms or V8 builds. 55/59 passed in CI; the 4
+  failures were all raw-float table comparisons. **Every assignment golden
+  passed** — the property QM-0 §10.1 actually requires held cross-platform.
+- **Human decision (2026-08-18, required by charter — gate change):** split the
+  gate rather than loosen it. Exact where determinism is by construction (`u`,
+  `rngState` — integer arithmetic, no libm), tolerance only on `g`/`G`.
+- **Acceptance criteria:**
+  1. ✅ `u` and `rngState` asserted bit-exact; `g`/`G` within 8 ULP.
+  2. ✅ All assignment goldens remain exact-match, unchanged.
+  3. ✅ A self-test proves the tolerance still fires on an O(1e−7) change —
+     a loosened gate nobody watched fire is decoration.
+  4. ⏳ CI green on ubuntu-x64. **This is the criterion that matters and it can
+     only be met on the runner** — local green is what hid the problem.
+- **Findings carried forward (not fixed here):**
+  - QM-0 §8.2 offers "enter a seed to regenerate a table from scratch". That
+    regeneration is now known to be platform-dependent at the last ULP.
+    §8.2's core rule (store the table, never reconstruct for recall) is
+    *strengthened* by this, but the seed-entry feature is not portable in the
+    way the spec implies. Spec amendment candidate — human call, not urgent.
+  - Max's `v8` is a third V8 build. Any future device-side golden must compare
+    assignments, never variates. Recorded in LIBRARY L0004.
+
 ### Q-004 — QM-1 device shell (P2)
 - **Status:** blocked (on P1 gate)
 - **Scope:** `device/`
@@ -138,6 +167,12 @@ landscape; any public release is gated on a prior-art & IP re-scan.
   a slot — an N-module pool needs ~N²/2 cells and that ceiling arrives fast.
 
 ## Decision log
+
+- 2026-08-18 — Q-006 opened: golden float-exactness relaxed to a split gate on
+  human decision; CI had been red 13 days against a correct engine
+  (trace: `traces/2026-08-18-golden-portability.md`).
+- 2026-08-18 — PR workflow adopted; `main` protected (PR + green `verify`
+  required). See DECISIONS D-009.
 
 - 2026-08-08 — Q-003 done; **P1 gate closed** (engine suite green, goldens
   frozen and protected). Two design calls recorded in DECISIONS D-007
