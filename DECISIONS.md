@@ -12,6 +12,36 @@ supersede them with a new one.
   to make it absolute. CI already ran on `pull_request`, so no workflow change
   was needed.
 
+- **D-012 · 2026-08-18 — Kit 2.4.0: gate mechanism vendored to `.kit/`.**
+  Kit gate code used to be COPIED into each repo; a `kit_version` was therefore
+  a claim about a copy, and a copy can lie. Confirmed here: this repo declared
+  `kit_version: 2.1.0` while its copied `leak_gate` matched only
+  `/(Users|home)/[^/]+/` — **`C:\Users\<user>\...` went straight through**. The
+  vendored gate adds `[A-Za-z]:\+Users\+[^\]`, so this migration closed a
+  real, previously invisible hole rather than being bookkeeping.
+  `record()` and `leak_gate()` are no longer project-owned; `.kit/` is
+  KIT-OWNED, pinned by sha256 in `.kit/MANIFEST`, and `kit_integrity` reddens
+  `fast` if it is touched. Update only via `kit_sync.py`.
+  **Verified beyond the prescribed checks:** (a) the Windows pattern now fires;
+  (b) the Q-007 currency-plant concurrency fix SURVIVED the transfer — foreign
+  plant → exit 0, owned plant → exit 1, so the transient-red bug did not
+  regress; (c) `kit_integrity` reddens on a tampered `.kit/` and goes green
+  again after `kit_sync.py`; (d) `record()`/`./verify report` still work from
+  the vendored source. Project gates, test commands, and everything else in
+  `./verify` were untouched by the migration.
+
+- **D-011 · 2026-08-18 — Leak gate ignores foreign currency-probe plants.**
+  Gate change to `./verify` (human-authored). `kit/currency.py` proves the leak
+  gate fires by planting identity paths in `.kit-currency-plant-*` files in the
+  working tree and running `./verify`; because the gate deliberately scans
+  UNTRACKED files, a concurrent run of our own read someone else's plant and
+  went red on a file that had vanished by the time it was investigated. Runs now
+  exclude plants they do not own; the owning probe names its file in
+  `KIT_LEAK_PLANT` and still sees it, so currency.py's proof still works.
+  **Verified not to be a weakening, empirically rather than by argument:** an
+  ordinary untracked file containing an identity path still reddens the gate
+  (exit 1), and only the fixed dot-prefixed probe pattern is excluded.
+
 - **D-010 · 2026-08-18 — Golden gate split, not loosened (Q-006).** Human
   decision, required because relaxing a golden comparison is a gate change.
   `Math.log` is not bit-identical across platforms, so raw-float noise tables
