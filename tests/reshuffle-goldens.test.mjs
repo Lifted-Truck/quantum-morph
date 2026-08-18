@@ -16,6 +16,7 @@ import {
   selectAssignment,
 } from '../engine/index.mjs';
 import { RESHUFFLE_CASE, buildSlots } from './reshuffle-case.mjs';
+import { assertFloatsClose } from './helpers.mjs';
 
 const golden = JSON.parse(
   readFileSync(new URL('./goldens/qm0-reshuffle.json', import.meta.url), 'utf8'),
@@ -39,10 +40,10 @@ test('replaying the scripted lifetime reproduces every step exactly', () => {
     else if (step.op === 'partial') table = reshufflePartial(table, step.d);
 
     assert.equal(table.epoch, step.epoch, `step ${n} (${step.op}) epoch`);
-    assert.deepEqual(Array.from(table.g), step.noise.g, `step ${n} (${step.op}) g`);
     assert.deepEqual(Array.from(table.u), step.noise.u, `step ${n} (${step.op}) u`);
-    assert.deepEqual(Array.from(table.G), step.noise.G, `step ${n} (${step.op}) G`);
     assert.equal(table.rngState, step.noise.rngState, `step ${n} (${step.op}) rngState`);
+    assertFloatsClose(table.g, step.noise.g, `step ${n} (${step.op}) g`);
+    assertFloatsClose(table.G, step.noise.G, `step ${n} (${step.op}) G`);
 
     for (const p of step.probe) {
       const a = selectAssignment({
@@ -77,8 +78,8 @@ test('a state restored mid-lifetime continues identically (QM-0 §8.2)', () => {
   const continued =
     nextStep.op === 'full' ? reshuffleFull(restored, nextStep.seed) : reshufflePartial(restored, nextStep.d);
 
-  assert.deepEqual(Array.from(continued.g), nextStep.noise.g);
   assert.deepEqual(Array.from(continued.u), nextStep.noise.u);
   assert.equal(continued.rngState, nextStep.noise.rngState);
   assert.equal(continued.epoch, nextStep.epoch);
+  assertFloatsClose(continued.g, nextStep.noise.g, 'g');
 });

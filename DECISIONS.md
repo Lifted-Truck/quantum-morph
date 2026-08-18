@@ -3,6 +3,25 @@
 One entry per ratified decision, newest first. Never edit past entries;
 supersede them with a new one.
 
+- **D-009 · 2026-08-18 — PR workflow; `main` protected.** Work moves to
+  branch-per-queue-item (`q-00N-slug`, matching ROADMAP ids so a branch traces
+  to its acceptance criteria), squash merge, PR required. Agent authority:
+  may push feature branches and open PRs without asking; **merging stays
+  human**. `main` is protected — PR required, `verify` status check must pass.
+  `enforce_admins` is left OFF so the owner keeps an escape hatch; say the word
+  to make it absolute. CI already ran on `pull_request`, so no workflow change
+  was needed.
+
+- **D-010 · 2026-08-18 — Golden gate split, not loosened (Q-006).** Human
+  decision, required because relaxing a golden comparison is a gate change.
+  `Math.log` is not bit-identical across platforms, so raw-float noise tables
+  cannot be pinned exactly; assignments can and still are. New rule: assert
+  EXACT where determinism is by construction (`u`, `rngState` — integer
+  arithmetic), tolerance (8 ULP) only where libm is in the path, and prove the
+  tolerance still fires with a self-test. Net effect is a gate that is more
+  precise about what is guaranteed, not a weaker one. The engine was never
+  wrong and was not changed.
+
 - **D-008 · 2026-08-17 — Kit retrofit to 2.1.0; QM-3 filed and ranked.**
   `currency.py` reported BEHIND by 2: the 2.0.0 baseline was fully present but
   undeclared, and 2.1.0's mailbox scope rule was missing. Applied: a

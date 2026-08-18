@@ -16,6 +16,7 @@ import {
   CONTINUOUS_POLICY,
 } from '../engine/index.mjs';
 import { GOLDEN_CASE, buildSlots } from './golden-case.mjs';
+import { assertFloatsClose } from './helpers.mjs';
 
 const golden = JSON.parse(
   readFileSync(new URL('./goldens/qm0-selection.json', import.meta.url), 'utf8'),
@@ -53,9 +54,15 @@ test('pinned assignments match exactly across the position grid', () => {
   assert.equal(rows, golden.epochs.length * GOLDEN_CASE.settings.length * GOLDEN_CASE.grid.length);
 });
 
-test('the noise table regenerates bit-identically from its seed', () => {
+test('the noise table regenerates from its seed — exactly where determinism is by construction', () => {
   // Pins the PRNG stream itself: a change to rng.mjs or to draw ORDER breaks this
   // even if the selection law is untouched.
+  //
+  // `u` and `rngState` are EXACT because they never touch libm: rngState is
+  // integer, and u is (uint32 + 0.5) / 2^32, an exactly-representable division.
+  // `g` and `G` go through Math.log and drift by ULPs across platforms — see
+  // assertFloatsClose. Asserting the split, rather than loosening everything,
+  // is what keeps this a real tripwire (ROADMAP Q-006).
   const fresh = createNoiseTable({
     slotCount: GOLDEN_CASE.slotCount,
     cornerCount: GOLDEN_CASE.cornerCount,
@@ -63,18 +70,32 @@ test('the noise table regenerates bit-identically from its seed', () => {
     seed: GOLDEN_CASE.seed,
   });
   const pinned = deserializeNoiseTable(golden.epochs[0].noise);
-  assert.deepEqual(Array.from(fresh.g), Array.from(pinned.g));
-  assert.deepEqual(Array.from(fresh.u), Array.from(pinned.u));
-  assert.deepEqual(Array.from(fresh.G), Array.from(pinned.G));
-  assert.equal(fresh.rngState, pinned.rngState);
+  assert.deepEqual(Array.from(fresh.u), Array.from(pinned.u), 'u must be bit-exact on every platform');
+  assert.equal(fresh.rngState, pinned.rngState, 'rngState is integer — bit-exact');
+  assertFloatsClose(fresh.g, pinned.g, 'g');
+  assertFloatsClose(fresh.G, pinned.G, 'G');
 });
 
-test('the pinned reshuffle reproduces epoch 1 exactly', () => {
+test('the pinned reshuffle reproduces epoch 1', () => {
   const t0 = deserializeNoiseTable(golden.epochs[0].noise);
   const t1 = reshufflePartial(t0, GOLDEN_CASE.reshuffleDepth);
   const pinned = deserializeNoiseTable(golden.epochs[1].noise);
   assert.equal(t1.epoch, pinned.epoch);
-  assert.deepEqual(Array.from(t1.g), Array.from(pinned.g));
-  assert.deepEqual(Array.from(t1.u), Array.from(pinned.u));
-  assert.deepEqual(Array.from(t1.G), Array.from(pinned.G));
+  assert.deepEqual(Array.from(t1.u), Array.from(pinned.u), 'which slots were redrawn is exact');
+  assertFloatsClose(t1.g, pinned.g, 'g');
+  assertFloatsClose(t1.G, pinned.G, 'G');
+});
+
+test('the tolerance still catches a real regression', () => {
+  // A loosened gate nobody has watched fire is decoration. libm drift is ~1e-16
+  // relative; anything a changed PRNG, draw order, or formula produces is O(1).
+  const base = Float64Array.from([0.5, -1.25, 3.0]);
+
+  // Drift-sized perturbation: must pass.
+  const drifted = Float64Array.from([...base].map((v) => v + 2 * Number.EPSILON * Math.max(1, Math.abs(v))));
+  assertFloatsClose(drifted, base, 'drift');
+
+  // Regression-sized: must fail. Even a change 1e9x smaller than a real one fires.
+  assert.throws(() => assertFloatsClose(Float64Array.from([0.5, -1.25, 3.0000001]), base, 'regression'));
+  assert.throws(() => assertFloatsClose(Float64Array.from([0.5, -1.25]), base, 'length'));
 });
