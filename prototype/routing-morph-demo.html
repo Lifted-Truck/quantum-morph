@@ -1,0 +1,436 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Routing Morph Demo — L2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --chassis:#131218; --panel:#1b1a22; --panel2:#22212b; --hair:#332f3f;
+  --ink:#ded9ea; --muted:#8b8499;
+  --A:#f2b134; --B:#ff4d6d; --C:#4cc9f0; --D:#7ae582;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--chassis);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif}
+body{padding:20px;max-width:1240px;margin:0 auto}
+h1{font-size:14px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin:0}
+.sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:4px}
+header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--hair);padding-bottom:12px;margin-bottom:16px;gap:16px}
+#start{font-family:var(--mono);font-size:12px;padding:9px 16px;background:var(--ink);color:var(--chassis);border:0;border-radius:2px;cursor:pointer;font-weight:600;letter-spacing:.06em}
+#start[disabled]{background:var(--panel2);color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--hair);border-radius:3px;padding:12px}
+.plabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.top{display:grid;grid-template-columns:340px 1fr;gap:14px}
+@media(max-width:880px){.top{grid-template-columns:1fr}}
+canvas{display:block;width:100%}
+#pad{aspect-ratio:1;cursor:crosshair;border-radius:2px;touch-action:none}
+.census{display:flex;height:12px;margin-top:8px;border-radius:2px;overflow:hidden;background:var(--panel2)}
+.census div{transition:width .15s linear}
+.clabel{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;letter-spacing:.1em;text-transform:uppercase}
+.ctl{margin-bottom:11px}
+.ctl label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;text-transform:uppercase}
+.ctl label span{color:var(--ink)}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:2px;background:var(--hair);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--ink);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border:0;border-radius:50%;background:var(--ink);cursor:pointer}
+.seg{display:flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden}
+.seg button{flex:1;background:transparent;border:0;color:var(--muted);font-family:var(--mono);font-size:9.5px;padding:5px 2px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--panel2);color:var(--ink)}
+.btn{width:100%;background:var(--panel2);border:1px solid var(--hair);color:var(--ink);font-family:var(--mono);font-size:10.5px;padding:8px;border-radius:2px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.pending{font-family:var(--mono);font-size:9.5px;color:var(--A);min-height:13px;margin-top:6px}
+#graphwrap{margin-top:14px}
+#graph{height:300px}
+.bottom{display:grid;grid-template-columns:1fr 300px;gap:14px;margin-top:14px}
+@media(max-width:880px){.bottom{grid-template-columns:1fr}}
+table{border-collapse:collapse;font-family:var(--mono);font-size:10px;width:100%}
+th{color:var(--muted);font-weight:500;text-align:center;padding:4px;font-size:9px;letter-spacing:.1em}
+td{border:1px solid var(--hair);text-align:center;padding:6px 4px;min-width:44px;color:var(--muted)}
+td.cell{border-left-width:3px;color:var(--ink)}
+td.blank{background:#0d0c11;border-color:#221f2c}
+td.norm{border-style:dashed;color:var(--A)}
+td.flash{animation:fl .5s ease-out}
+@keyframes fl{0%{background:rgba(255,255,255,.25)}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){td.flash{animation:none}.census div{transition:none}}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:8px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:0}
+footer{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:16px;border-top:1px solid var(--hair);padding-top:10px;line-height:1.7}
+</style>
+
+<header>
+  <div>
+    <h1>Routing Morph — L2 Construction</h1>
+    <div class="sub">fixed pool · rank order · upper-triangular sends · normalled to master</div>
+  </div>
+  <button id="start">Start audio</button>
+</header>
+
+<div class="top">
+  <div class="panel">
+    <div class="plabel">Morph field</div>
+    <canvas id="pad"></canvas>
+    <div class="clabel">routing cells</div><div class="census" id="cenR"></div>
+    <div class="clabel">module params</div><div class="census" id="cenP"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="plabel">Engine</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+        <div class="ctl"><label>Temperature <span id="tv">1.00</span></label><input type="range" id="temp" min="0.05" max="3" step="0.01" value="1"></div>
+        <div class="ctl"><label>Coupling <span id="cv">40%</span></label><input type="range" id="coup" min="0" max="1" step="0.01" value="0.4"></div>
+        <div class="ctl"><label>Param glide <span id="pg">8 ms</span></label><input type="range" id="pglide" min="1" max="60" step="1" value="8"></div>
+        <div class="ctl"><label>Routing glide <span id="rg">140 ms</span></label><input type="range" id="rglide" min="10" max="800" step="5" value="140"></div>
+        <div class="ctl"><label>Commit</label><div class="seg" id="timing"><button data-v="now">Immediate</button><button data-v="beat" aria-pressed="true">Beat</button><button data-v="bar">Bar</button></div></div>
+        <div class="ctl"><label>Pattern · <span id="bv">126 bpm</span></label><input type="range" id="bpm" min="80" max="160" step="1" value="126"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="reshuffle">Reshuffle · seed <span id="seedv">7311</span></button>
+        <button class="btn" id="play">Pattern: on</button>
+      </div>
+      <div class="pending" id="pend"></div>
+    </div>
+    <div class="panel" id="graphwrap">
+      <div class="plabel">Live routing graph — cable colour = owning corner · dashed = normalled</div>
+      <canvas id="graph"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="bottom">
+  <div class="panel">
+    <div class="plabel">Send matrix — row sends to column · left edge = owning corner</div>
+    <table id="matrix"></table>
+  </div>
+  <div class="panel">
+    <div class="plabel">Module params</div>
+    <table id="params"></table>
+  </div>
+</div>
+
+<footer id="foot">Latch <b>Start audio</b>. Drag the field. Every routing cell is an ordinary slot: it flips under the same Gumbel-argmax law as the parameters, coupled to its module's group. Zero-sum rows normal to master (dashed). Routing commits land on the beat by default.</footer>
+
+<script>
+'use strict';
+
+/* ---------------- corners ---------------- */
+const CORNERS=[
+ {id:'A',name:'SPARSE',color:'#f2b134'},
+ {id:'B',name:'CRUSH', color:'#ff4d6d'},
+ {id:'C',name:'DUB',   color:'#4cc9f0'},
+ {id:'D',name:'WASH',  color:'#7ae582'}];
+
+/* ---------------- pool & slots ----------------
+   Rank order: SRC(0) DRV(1) FLT(2) DLY(3) VRB(4) MST(5). Fixed.   */
+const NODES=['SRC','DRV','FLT','DLY','VRB','MST'];
+const SLOTS=[];
+function slot(o){o.idx=SLOTS.length;SLOTS.push(o);return o;}
+
+// routing cells: values per corner [A,B,C,D]
+const ROUTES=[
+ ['SRC','DRV',[0,1,0,0]], ['SRC','FLT',[0,0,.9,0]], ['SRC','DLY',[0,0,0,.5]],
+ ['SRC','VRB',[.25,0,0,.8]],['SRC','MST',[1,0,.15,.1]],
+ ['DRV','FLT',[0,1,0,0]], ['DRV','DLY',[0,0,.7,0]], ['DRV','VRB',[0,0,0,1]], ['DRV','MST',[1,0,.3,0]],
+ ['FLT','DLY',[0,0,1,0]], ['FLT','VRB',[0,0,0,.8]], ['FLT','MST',[1,1,0,.2]],
+ ['DLY','VRB',[0,0,.6,.9]],['DLY','MST',[1,1,.5,.1]],
+ ['VRB','MST',[1,1,1,1]]
+].map(([f,t,v])=>slot({kind:'route',from:f,to:t,group:f,vals:v,sal:2.2,fmt:x=>x.toFixed(2)}));
+
+const PSLOTS=[
+ slot({kind:'active',id:'drvOn',group:'DRV',vals:[0,1,0,0],sal:2.5,name:'DRV active',fmt:v=>v?'on':'byp'}),
+ slot({kind:'cont',id:'drvAmt',group:'DRV',vals:[.1,.85,.5,.2],sal:1,name:'DRV amount',fmt:v=>Math.round(v*100)+'%'}),
+ slot({kind:'cont',id:'drvTone',group:'DRV',vals:[4000,2500,3500,6000],sal:1,log:1,name:'DRV tone',fmt:v=>(v/1000).toFixed(1)+'k'}),
+ slot({kind:'active',id:'fltOn',group:'FLT',vals:[0,1,1,0],sal:2.5,name:'FLT active',fmt:v=>v?'on':'byp'}),
+ slot({kind:'cont',id:'fltCut',group:'FLT',vals:[2000,900,1200,400],sal:1,log:1,name:'FLT cutoff',fmt:v=>v>=1000?(v/1000).toFixed(1)+'k':Math.round(v)}),
+ slot({kind:'disc',id:'fltType',group:'FLT',vals:['lowpass','lowpass','bandpass','highpass'],sal:2,name:'FLT type',fmt:v=>({lowpass:'LP',bandpass:'BP',highpass:'HP'})[v]}),
+ slot({kind:'active',id:'dlyOn',group:'DLY',vals:[0,0,1,1],sal:2.5,name:'DLY active',fmt:v=>v?'on':'byp'}),
+ slot({kind:'cont',id:'dlyTime',group:'DLY',vals:[.2,.11,.375,.55],sal:1,log:1,name:'DLY time',fmt:v=>Math.round(v*1000)+'ms'}),
+ slot({kind:'cont',id:'dlyFb',group:'DLY',vals:[.2,.3,.65,.55],sal:1,name:'DLY feedbk',fmt:v=>Math.round(v*100)+'%'}),
+ slot({kind:'active',id:'vrbOn',group:'VRB',vals:[1,0,1,1],sal:2.5,name:'VRB active',fmt:v=>v?'on':'byp'}),
+ slot({kind:'disc',id:'vrbChar',group:'VRB',vals:['plate','plate','hall','hall'],sal:2,name:'VRB char',fmt:v=>v}),
+ slot({kind:'cont',id:'vrbDamp',group:'VRB',vals:[6000,2000,3000,7000],sal:1,log:1,name:'VRB damp',fmt:v=>(v/1000).toFixed(1)+'k'})
+];
+const GROUPS=['SRC','DRV','FLT','DLY','VRB'];
+
+/* ---------------- flip engine (QM-0 §3 + §5.1 mask coupling) ---------------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const gum=u=>-Math.log(-Math.log(Math.min(1-1e-9,Math.max(1e-9,u))));
+let seed=7311,noise={g:[],u:[],G:{}};
+function reshuffle(newSeed){
+  if(newSeed!==undefined)seed=newSeed;
+  const r=mulberry32(seed);
+  noise.g=SLOTS.map(()=>[0,1,2,3].map(()=>gum(r())));
+  noise.u=SLOTS.map(()=>r());
+  noise.G={};GROUPS.forEach(m=>noise.G[m]=[0,1,2,3].map(()=>gum(r())));
+}
+reshuffle();
+
+const S={x:.15,y:.15,T:1,c:.4,pg:.008,rg:.14,timing:'beat',bpm:126,playing:true};
+const wts=(x,y)=>[(1-x)*(1-y),x*(1-y),(1-x)*y,x*y];
+function assignAt(x,y){
+  const w=wts(x,y),lw=w.map(v=>v>1e-9?Math.log(v):-1e12);
+  return SLOTS.map((s,i)=>{
+    const nv=noise.u[i]<S.c?noise.G[s.group]:noise.g[i];
+    let best=-Infinity,bi=0;
+    for(let k=0;k<4;k++){const sc=s.sal*lw[k]/S.T+nv[k];if(sc>best){best=sc;bi=k;}}
+    return bi;
+  });
+}
+let committed=assignAt(S.x,S.y),pendingA=null;
+
+/* effective routing with normalling */
+function effectiveRouting(a){
+  const eff={},norm={};
+  GROUPS.forEach(gn=>{
+    let sum=0;
+    ROUTES.forEach(r=>{if(r.from===gn){eff[r.from+'>'+r.to]=r.vals[a[r.idx]];sum+=r.vals[a[r.idx]];}});
+    norm[gn]=false;
+    if(sum<0.01){eff[gn+'>MST']=1;norm[gn]=true;}
+  });
+  return {eff,norm};
+}
+
+/* ---------------- audio ---------------- */
+let ctx=null,cells={},mods={},srcBus=null,limiter=null,masterIn=null,irs={};
+function makeIR(dur,decay){
+  const sr=ctx.sampleRate,n=Math.floor(sr*dur),b=ctx.createBuffer(2,n,sr);
+  const r=mulberry32(99);
+  for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);
+    for(let i=0;i<n;i++)d[i]=(r()*2-1)*Math.pow(1-i/n,decay);}
+  return b;
+}
+function makeModule(name){
+  const inn=ctx.createGain(),out=ctx.createGain(),byp=ctx.createGain(),fx=ctx.createGain();
+  inn.connect(byp);byp.connect(out);inn.connect(fx);
+  const m={inn,out,byp,fx,active:0};
+  byp.gain.value=1;fx.gain.value=0;
+  if(name==='DRV'){
+    const pre=ctx.createGain(),sh=ctx.createWaveShaper(),tone=ctx.createBiquadFilter(),post=ctx.createGain();
+    const c=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/1023*2-1;c[i]=Math.tanh(3*x)/Math.tanh(3);}
+    sh.curve=c;sh.oversample='2x';tone.type='lowpass';tone.frequency.value=4000;
+    fx.connect(pre);pre.connect(sh);sh.connect(tone);tone.connect(post);post.connect(out);
+    m.set={drvAmt:(v,t)=>{ramp(pre.gain,1+v*24,t);ramp(post.gain,1/(1+v*10),t);},drvTone:(v,t)=>ramp(tone.frequency,v,t)};
+  }else if(name==='FLT'){
+    const f=ctx.createBiquadFilter();f.Q.value=2.5;f.frequency.value=1500;
+    fx.connect(f);f.connect(out);
+    m.set={fltCut:(v,t)=>ramp(f.frequency,v,t),fltType:v=>{f.type=v;}};
+  }else if(name==='DLY'){
+    const d=ctx.createDelay(1.2),fb=ctx.createGain(),wet=ctx.createGain();
+    d.delayTime.value=.3;fb.gain.value=.3;wet.gain.value=1;
+    fx.connect(d);d.connect(fb);fb.connect(d);d.connect(wet);wet.connect(out);
+    m.set={dlyTime:(v)=>{d.delayTime.setTargetAtTime(v,ctx.currentTime,.06);},dlyFb:(v,t)=>ramp(fb.gain,v,t)};
+  }else if(name==='VRB'){
+    const cvP=ctx.createConvolver(),cvH=ctx.createConvolver(),gP=ctx.createGain(),gH=ctx.createGain(),damp=ctx.createBiquadFilter();
+    cvP.buffer=irs.plate;cvH.buffer=irs.hall;damp.type='lowpass';damp.frequency.value=5000;
+    gP.gain.value=1;gH.gain.value=0;
+    fx.connect(cvP);fx.connect(cvH);cvP.connect(gP);cvH.connect(gH);gP.connect(damp);gH.connect(damp);damp.connect(out);
+    m.set={vrbChar:(v,t)=>{ramp(gP.gain,v==='plate'?1:0,t);ramp(gH.gain,v==='hall'?1:0,t);},vrbDamp:(v,t)=>ramp(damp.frequency,v,t)};
+  }
+  return m;
+}
+function ramp(p,v,t){const n=ctx.currentTime;p.cancelScheduledValues(n);p.setValueAtTime(p.value,n);p.linearRampToValueAtTime(v,n+Math.max(.002,t||S.pg));}
+
+function initAudio(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  irs.plate=makeIR(.6,4);irs.hall=makeIR(2.2,2.4);
+  limiter=ctx.createDynamicsCompressor();
+  limiter.threshold.value=-8;limiter.ratio.value=20;limiter.attack.value=.002;limiter.release.value=.15;
+  const out=ctx.createGain();out.gain.value=.8;
+  masterIn=ctx.createGain();masterIn.connect(limiter);limiter.connect(out);out.connect(ctx.destination);
+  srcBus=ctx.createGain();
+  ['DRV','FLT','DLY','VRB'].forEach(n=>mods[n]=makeModule(n));
+  // permanent send cells: from every sender out to every legal receiver in
+  const outOf={SRC:srcBus,DRV:mods.DRV.out,FLT:mods.FLT.out,DLY:mods.DLY.out,VRB:mods.VRB.out};
+  const inOf={DRV:mods.DRV.inn,FLT:mods.FLT.inn,DLY:mods.DLY.inn,VRB:mods.VRB.inn,MST:masterIn};
+  ROUTES.forEach(r=>{const g=ctx.createGain();g.gain.value=0;outOf[r.from].connect(g);g.connect(inOf[r.to]);cells[r.from+'>'+r.to]=g;});
+  commit(committed,true);
+  schedTimer=setInterval(scheduler,25);nextT=ctx.currentTime+.1;step=0;
+}
+
+/* source pattern */
+const PAT=[45,57,60,64,57,67,64,60],ROOT=0;
+let nextT=0,step=0,schedTimer=null;
+function pluck(midi,t){
+  const f=440*Math.pow(2,(midi-69)/12);
+  const o=ctx.createOscillator(),sub=ctx.createOscillator(),g=ctx.createGain(),lp=ctx.createBiquadFilter();
+  o.type='sawtooth';o.frequency.value=f;sub.type='square';sub.frequency.value=f/2;
+  lp.type='lowpass';lp.frequency.value=5200;
+  o.connect(lp);sub.connect(lp);lp.connect(g);g.connect(srcBus);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.24,t+.006);
+  g.gain.exponentialRampToValueAtTime(.001,t+.34);
+  o.start(t);sub.start(t);o.stop(t+.4);sub.stop(t+.4);
+}
+function scheduler(){
+  if(!ctx)return;
+  const spb=60/S.bpm,stepLen=spb/2;
+  while(nextT<ctx.currentTime+.12){
+    const isBeat=step%2===0,isBar=step%8===0;
+    if(pendingA&&(S.timing==='now'||(S.timing==='beat'&&isBeat)||(S.timing==='bar'&&isBar))){
+      const a=pendingA;pendingA=null;
+      const dt=Math.max(0,(nextT-ctx.currentTime)*1000);
+      setTimeout(()=>{commit(a);renderPending();},dt);
+    }
+    if(S.playing)pluck(PAT[step%PAT.length],nextT);
+    step++;nextT+=stepLen;
+  }
+  if(nextT<ctx.currentTime)nextT=ctx.currentTime+.05;
+}
+
+/* commit */
+let curEff={},curNorm={},display={};
+function commit(a,force){
+  const changed=[];
+  SLOTS.forEach((s,i)=>{if(force||a[i]!==committed[i])changed.push(i);});
+  committed=a.slice();
+  const {eff,norm}=effectiveRouting(a);
+  if(ctx){
+    for(const key in eff){
+      if(force||Math.abs((curEff[key]||0)-eff[key])>1e-4)ramp(cells[key].gain,eff[key],S.rg);
+    }
+    PSLOTS.forEach(s=>{
+      const v=s.vals[committed[s.idx]];
+      if(s.kind==='active'){const m=mods[s.group];
+        if(force||m.active!==v){m.active=v;ramp(m.fx.gain,v?1:0,S.rg);ramp(m.byp.gain,v?0:1,S.rg);}
+      }else{
+        const m=mods[s.group];if(m.set[s.id])m.set[s.id](v,s.kind==='disc'?S.rg:S.pg);
+      }
+    });
+  }
+  curEff=eff;curNorm=norm;
+  changed.forEach(i=>flashCell(i));
+  renderTables();renderCensus();
+}
+function update(){
+  const a=assignAt(S.x,S.y);
+  const diff=a.some((v,i)=>v!==committed[i]);
+  if(!ctx||S.timing==='now'){if(diff||!ctx)commit(a);pendingA=null;}
+  else if(diff)pendingA=a; else pendingA=null;
+  renderPending();drawPad();
+}
+
+/* ---------------- UI ---------------- */
+const $=s=>document.querySelector(s);
+$('#legend').innerHTML=CORNERS.map(c=>'<span><i class="dot" style="background:'+c.color+'"></i>'+c.id+' '+c.name+'</span>').join('');
+const cenR=$('#cenR'),cenP=$('#cenP');
+CORNERS.forEach(c=>{[cenR,cenP].forEach(el=>{const d=document.createElement('div');d.style.background=c.color;el.appendChild(d);});});
+function renderCensus(){
+  const cR=[0,0,0,0],cP=[0,0,0,0];
+  SLOTS.forEach((s,i)=>{(s.kind==='route'?cR:cP)[committed[i]]++;});
+  [...cenR.children].forEach((d,k)=>d.style.width=(cR[k]/ROUTES.length*100)+'%');
+  [...cenP.children].forEach((d,k)=>d.style.width=(cP[k]/PSLOTS.length*100)+'%');
+}
+function renderPending(){$('#pend').textContent=pendingA?('⟳ '+pendingA.filter((v,i)=>v!==committed[i]).length+' flips queued for next '+S.timing):'';}
+
+/* matrix + params tables */
+const RCV=['DRV','FLT','DLY','VRB','MST'],SND=['SRC','DRV','FLT','DLY','VRB'];
+const cellTD={};
+(function(){
+  const t=$('#matrix');let h='<tr><th></th>'+RCV.map(r=>'<th>'+r+'</th>').join('')+'</tr>';
+  SND.forEach(f=>{h+='<tr><th>'+f+'</th>'+RCV.map(r=>{
+    const rt=ROUTES.find(x=>x.from===f&&x.to===r);
+    return rt?'<td class="cell" id="mc'+rt.idx+'"></td>':'<td class="blank"></td>';
+  }).join('')+'</tr>';});
+  t.innerHTML=h;
+  ROUTES.forEach(r=>cellTD[r.idx]=$('#mc'+r.idx));
+  const p=$('#params');p.innerHTML=PSLOTS.map(s=>'<tr><th style="text-align:left">'+s.name+'</th><td class="cell" id="mc'+s.idx+'"></td></tr>').join('');
+  PSLOTS.forEach(s=>cellTD[s.idx]=$('#mc'+s.idx));
+})();
+function renderTables(){
+  SLOTS.forEach((s,i)=>{
+    const td=cellTD[i],k=committed[i];
+    let v=s.vals[k];
+    if(s.kind==='route'){
+      const key=s.from+'>'+s.to;
+      const nrm=curNorm[s.from]&&s.to==='MST';
+      td.textContent=nrm?'norm':s.fmt(curEff[key]!==undefined?curEff[key]:v);
+      td.classList.toggle('norm',!!nrm);
+    }else td.textContent=s.fmt(v);
+    td.style.borderLeftColor=CORNERS[k].color;
+  });
+}
+function flashCell(i){const td=cellTD[i];if(!td)return;td.classList.remove('flash');void td.offsetWidth;td.classList.add('flash');}
+
+/* pad */
+const pad=$('#pad'),pg2=pad.getContext('2d');
+function drawPad(){
+  const dpr=devicePixelRatio||1,r=pad.getBoundingClientRect();
+  pad.width=r.width*dpr;pad.height=r.width*dpr;pg2.setTransform(dpr,0,0,dpr,0,0);
+  const W=r.width;
+  pg2.fillStyle='#0d0c11';pg2.fillRect(0,0,W,W);
+  const pos=[[0,0],[W,0],[0,W],[W,W]];
+  CORNERS.forEach((c,k)=>{const g=pg2.createRadialGradient(pos[k][0],pos[k][1],0,pos[k][0],pos[k][1],W*.62);
+    g.addColorStop(0,c.color+'40');g.addColorStop(1,c.color+'00');pg2.fillStyle=g;pg2.fillRect(0,0,W,W);});
+  pg2.strokeStyle='#332f3f';pg2.beginPath();pg2.moveTo(W/2,0);pg2.lineTo(W/2,W);pg2.moveTo(0,W/2);pg2.lineTo(W,W/2);pg2.stroke();pg2.strokeRect(.5,.5,W-1,W-1);
+  pg2.font='500 10px "IBM Plex Mono",monospace';
+  const lb=[[8,16,'left'],[W-8,16,'right'],[8,W-8,'left'],[W-8,W-8,'right']];
+  CORNERS.forEach((c,k)=>{pg2.fillStyle=c.color;pg2.textAlign=lb[k][2];pg2.fillText(c.id+'·'+c.name,lb[k][0],lb[k][1]);});
+  const x=S.x*W,y=S.y*W;
+  pg2.strokeStyle='rgba(255,255,255,.35)';pg2.beginPath();pg2.arc(x,y,13,0,7);pg2.stroke();
+  pg2.fillStyle='#fff';pg2.beginPath();pg2.arc(x,y,3.5,0,7);pg2.fill();
+}
+let drag=false;
+function padXY(e){const r=pad.getBoundingClientRect();S.x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));S.y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));update();}
+pad.addEventListener('pointerdown',e=>{drag=true;pad.setPointerCapture(e.pointerId);padXY(e);if(ctx&&ctx.state==='suspended')ctx.resume();});
+pad.addEventListener('pointermove',e=>{if(drag)padXY(e);});
+pad.addEventListener('pointerup',()=>drag=false);
+
+/* graph */
+const gc=$('#graph'),gg=gc.getContext('2d');
+function drawGraph(){
+  const dpr=devicePixelRatio||1,r=gc.getBoundingClientRect();
+  gc.width=r.width*dpr;gc.height=r.height*dpr;gg.setTransform(dpr,0,0,dpr,0,0);
+  const W=r.width,H=r.height,pad0=60;
+  const xs={},NY=H-70;
+  NODES.forEach((n,i)=>xs[n]=pad0+i*(W-2*pad0)/(NODES.length-1));
+  // cables
+  ROUTES.forEach(rt=>{
+    const key=rt.from+'>'+rt.to;
+    const target=curEff[key]!==undefined?curEff[key]:0;
+    display[key]=display[key]===undefined?target:display[key]+(target-display[key])*.12;
+    const g=display[key];if(g<.02)return;
+    const x1=xs[rt.from],x2=xs[rt.to],span=(x2-x1)/(W-2*pad0);
+    const nrm=curNorm[rt.from]&&rt.to==='MST';
+    gg.strokeStyle=nrm?'#8b8499':CORNERS[committed[rt.idx]].color;
+    gg.lineWidth=1+g*5;gg.globalAlpha=.9;
+    gg.setLineDash(nrm?[5,5]:[]);
+    gg.beginPath();gg.moveTo(x1,NY-14);
+    gg.bezierCurveTo(x1,NY-40-span*150,x2,NY-40-span*150,x2,NY-14);
+    gg.stroke();gg.setLineDash([]);gg.globalAlpha=1;
+  });
+  // nodes
+  gg.font='600 11px "IBM Plex Mono",monospace';gg.textAlign='center';
+  NODES.forEach(n=>{
+    const m=mods[n],x=xs[n];
+    const on=n==='SRC'||n==='MST'||(m&&m.active);
+    gg.fillStyle=on?'#22212b':'#17161d';
+    gg.strokeStyle='#332f3f';
+    if(m){const aslot=PSLOTS.find(s=>s.kind==='active'&&s.group===n);gg.strokeStyle=CORNERS[committed[aslot.idx]].color;}
+    gg.beginPath();gg.roundRect(x-28,NY-14,56,28,3);gg.fill();gg.stroke();
+    gg.fillStyle=on?'#ded9ea':'#8b8499';gg.fillText(n,x,NY+4);
+    // param readout under module nodes
+    if(m){let yy=NY+30;gg.font='500 9px "IBM Plex Mono",monospace';
+      PSLOTS.forEach(s=>{if(s.group!==n||s.kind==='active')return;
+        gg.fillStyle=CORNERS[committed[s.idx]].color;
+        gg.fillText(s.fmt(s.vals[committed[s.idx]]),x,yy);yy+=12;});
+      gg.font='600 11px "IBM Plex Mono",monospace';}
+  });
+  requestAnimationFrame(drawGraph);
+}
+
+/* controls */
+function seg(id,cb){const el=$(id);el.querySelectorAll('button').forEach(b=>b.onclick=()=>{el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');cb(b.dataset.v);});}
+$('#temp').oninput=e=>{S.T=+e.target.value;$('#tv').textContent=S.T.toFixed(2);update();};
+$('#coup').oninput=e=>{S.c=+e.target.value;$('#cv').textContent=Math.round(S.c*100)+'%';update();};
+$('#pglide').oninput=e=>{S.pg=+e.target.value/1000;$('#pg').textContent=e.target.value+' ms';};
+$('#rglide').oninput=e=>{S.rg=+e.target.value/1000;$('#rg').textContent=e.target.value+' ms';};
+seg('#timing',v=>{S.timing=v;if(v==='now'&&pendingA){commit(pendingA);pendingA=null;renderPending();}});
+$('#bpm').oninput=e=>{S.bpm=+e.target.value;$('#bv').textContent=S.bpm+' bpm';};
+$('#reshuffle').onclick=()=>{seed=(Math.random()*100000)|0;$('#seedv').textContent=seed;reshuffle();update();};
+$('#play').onclick=e=>{S.playing=!S.playing;e.target.textContent='Pattern: '+(S.playing?'on':'off');};
+$('#start').onclick=e=>{if(!ctx){initAudio();e.target.textContent='Audio running';e.target.disabled=true;drawGraph();}};
+window.addEventListener('keydown',e=>{if(e.key==='r'&&e.target.tagName!=='INPUT')$('#reshuffle').click();});
+window.addEventListener('resize',drawPad);
+
+commit(committed,true);drawPad();drawGraph();
+</script>

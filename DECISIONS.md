@@ -3,6 +3,23 @@
 One entry per ratified decision, newest first. Never edit past entries;
 supersede them with a new one.
 
+- **D-008 · 2026-08-17 — Kit retrofit to 2.1.0; QM-3 filed and ranked.**
+  `currency.py` reported BEHIND by 2: the 2.0.0 baseline was fully present but
+  undeclared, and 2.1.0's mailbox scope rule was missing. Applied: a
+  marker-delimited `## Mailbox` section appended to CLAUDE.md (append-only,
+  re-runnable), `kit_version: "2.1.0"` written to the manifest, and the
+  untracked `.gitattributes` committed — it passed the presence check because
+  it existed on disk, but untracked it would not survive a clone, so the LF
+  guarantee it enforces was false for every reader but the author. Closing
+  check: `currency.py` prints CURRENT / nothing to do.
+  Alongside (human-approved, not kit business): `QM-3-fx-pool-spec.md` filed
+  into the protected `docs/specs/` and ranked **normative for FX/routing only,
+  subordinate to QM-0** — which it names as prerequisite. `routing-morph-demo
+  .html` moved to `prototype/` as reference-only. QM-3's phase ownership is
+  NOT resolved: it addresses "the host synth's" integration, which the roadmap
+  places at P4, so it is logged as ROADMAP **Q-005, blocked on a human ruling**
+  rather than guessed into a phase.
+
 - **D-007 · 2026-08-08 — Two commit-policy calls QM-0 §6 does not make.**
   (a) **A BAR event also satisfies BEAT policy.** §6.1 lists the policies but
   not how a host that emits only the strongest boundary it crossed should

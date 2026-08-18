@@ -115,6 +115,28 @@ landscape; any public release is gated on a prior-art & IP re-scan.
 - **Acceptance criteria:** defined at P1 close — writing them is the first
   task of P2 (per charter: no work on items with missing criteria).
 
+### Q-005 — QM-3 FX pool & routing (phase unresolved — BLOCKING ASK)
+- **Status:** blocked (needs a human ruling before criteria can be written)
+- **Scope:** TBD — `docs/specs/QM-3-fx-pool-spec.md` landed 2026-08-17
+- **Why it is blocked, not just unstarted:** QM-3 declares itself normative for
+  "the FX section of **the host synth's** quantum-morph integration". That is
+  QM-2 territory — integrating morph into an instrument that already exists —
+  which this ROADMAP places at **P4, unscoped**, after the M4L device ships.
+  So either (a) QM-3 belongs to a host-synth project and this repo only owns
+  the engine-side contract it implies, or (b) the roadmap's phase order is
+  wrong and native integration has moved ahead of P2. Those lead to different
+  work, so guessing is not available (charter: an item with ambiguous criteria
+  is not workable; surfacing the gap is the deliverable).
+- **What it would imply for the engine if (b):** QM-3 §1 makes every send-matrix
+  cell an ordinary morph slot with four corner values — i.e. routing rides the
+  existing selection law with no new subsystem, and its §1.6 classes rerouting
+  as SAFE (gain ramps, no allocation on the audio thread). On a first read that
+  needs *no* change to `engine/`, which is a strong signal the design is sound —
+  but "no change needed" is a hypothesis from one read, not a verified claim.
+- **Open questions for the human:** which project owns QM-3? Does it reorder
+  P2/P4? Is the 64-slot ceiling (QM-1 §2) still right once every send cell is
+  a slot — an N-module pool needs ~N²/2 cells and that ceiling arrives fast.
+
 ## Decision log
 
 - 2026-08-08 — Q-003 done; **P1 gate closed** (engine suite green, goldens

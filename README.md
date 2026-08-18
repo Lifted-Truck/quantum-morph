@@ -44,10 +44,11 @@ been run inside Max — only under Node. See
 | `docs/specs/QM-0-core-engine-spec.md` | **Normative** engine spec — wins over everything below |
 | `docs/specs/QM-1-m4l-device-spec.md` | The Max for Live MIDI-effect device |
 | `docs/specs/QM-2-instrument-integration-spec.md` | Contract for future native-instrument ports |
+| `docs/specs/QM-3-fx-pool-spec.md` | FX pool & routing — normative for that section only, subordinate to QM-0 |
 | `docs/prior-art.md` | Prior-art landscape + IP flags (swept 2026-07-24) |
 | `engine/` | QM-0 reference implementation — dependency-free ES modules: `rng` · `weights` · `noise` · `select` · `warp` · `commit` |
 | `device/` | M4L patcher + device glue — *empty until P2* |
-| `prototype/quantum-morph-lab.html` | Standalone browser prototype. Reference-only; its coupling approach is superseded by QM-0 §5 |
+| `prototype/` | Browser prototypes, reference-only: `quantum-morph-lab.html` (coupling superseded by QM-0 §5) and `routing-morph-demo.html` |
 | `tests/` | Unit tests + pinned golden assignment vectors (protected) |
 | `verify` | The oracle: `./verify fast` (CI) / `full` (pre-done gate) |
 | `ROADMAP.md` | Single source of truth for state and acceptance criteria |

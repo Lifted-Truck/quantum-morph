@@ -1,6 +1,7 @@
 {
   "schema": "project-manifest.0 (draft — kit v2 will formalize)",
   "status": "RATIFIED 2026-07-24 (human ratification at the P0 gate) — see ROADMAP",
+  "kit_version": "2.1.0",
   "survey": {
     "what_is_it": "engine + app — a pure deterministic morph engine (QM-0, JS reference implementation) plus a Max for Live MIDI-effect device (QM-1) as its first host; QM-2 is a contract for future native-instrument integrations",
     "architecture_rung": {
